@@ -26,7 +26,7 @@ const registerUser = async (req, res) => {
     )
     const newUserData = await newUser.save();
 
-    const msg = '<p> hii ' + name + ', please <a href="http://localhost:8000/verify-email?id=' + newUserData ._id+'">verify </a>  you email + </p>'
+    const msg = '<p> hii ' + name + ', please <a href="http://localhost:8000/mail-verification?id=' + newUserData._id + '">verify </a>  you email + </p>'
     console.log(msg);
 
     await sendMailer(email, "Mail Verification", msg);
@@ -36,11 +36,30 @@ const registerUser = async (req, res) => {
   }
 }
 
-const verifyEmail = async(req , res) =>{
+const verifyEmail = async (req, res) => {
   try {
-    
+    if (req.query.id === undefined) {
+      return res.render('404')
+    }
+    const user = await User.findOne({ _id: req.query.id })
+    if (user) {
+      if (user.is_verified===1){
+        return res.render('mail-verification', { message: "email has already beedd verified  " })
+      }
+      await User.findByIdAndUpdate({ _id: req.query.id }, {
+        $set: {
+          is_verified: 1
+        }
+      })
+      return res.render('mail-verification', { message: "mail verified successfully " })
+    }
+    else {
+      return res.render('mail-verification', { message: "user not found" })
+    }
+
   } catch (error) {
-    
+    console.log(error.message);
+    return res.render('404')
   }
 }
 module.exports = {
