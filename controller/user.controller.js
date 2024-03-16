@@ -1,6 +1,8 @@
 const sendMailer = require("../constants/sendMail");
 const User = require("../models/user_model");
 const bcrypt = require("bcrypt")
+const passwordReset = require("../models/resetPassword_model");
+const randomstring = require("randomstring");
 
 
 const registerUser = async (req, res) => {
@@ -95,11 +97,50 @@ const sendEmailVerification = async (req, res) => {
 
 
 
+// forget password 
+const resetPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    // console.log(email);
+    if (!email) {
+      return res.status(400).json({ message: "Please provide your email", success: false })
+    }
+    const existUser = await User.findOne({ email })
+    if (!existUser) {
+      return res.status(400).json({ message: "Email not found", success: false });
+    }
+
+    const randomString = randomstring.generate();
+
+    const msg = '<p>Hii ' + existUser.name + ' , Please click <a href="http://localhost:8000/reset-password?token=' + randomString + '">Here</a> to reset your password .</p>'
+
+
+    await passwordReset.deleteMany({user_id:existUser._id})
+    const data = await passwordReset({
+      user_id: existUser._id,
+      token: randomString
+    }).save();
+
+    await sendMailer(email, "Password reset ", msg);
+
+    return res.status(200).json({
+      message: "Successfully  reset password link send to your email please check ",
+      success: true, data
+    })
+  }
+  catch (error) {
+    return res.status(400).json({ message: "Something went wrong ", success: false })
+  }
+}
+
+
+
 
 
 
 module.exports = {
   registerUser,
   verifyEmail,
-  sendEmailVerification
+  sendEmailVerification,
+  resetPassword
 }
