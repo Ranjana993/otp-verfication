@@ -115,7 +115,7 @@ const resetPassword = async (req, res) => {
     const msg = '<p>Hii ' + existUser.name + ' , Please click <a href="http://localhost:8000/reset-password?token=' + randomString + '">Here</a> to reset your password .</p>'
 
 
-    await passwordReset.deleteMany({user_id:existUser._id})
+    await passwordReset.deleteMany({ user_id: existUser._id })
     const data = await passwordReset({
       user_id: existUser._id,
       token: randomString
@@ -134,7 +134,38 @@ const resetPassword = async (req, res) => {
 }
 
 
+const resetPasswordResponse = async (req, res) => {
+  try {
+    if (req.query.token === 'undefined') {
+      return res.render('404')
+    }
 
+    const found = await passwordReset.findOne({ token: req.query.token })
+    if (found) {
+      return res.render('reset-password', { found })
+    }
+
+    res.render('reset-password', { found })
+
+  } catch (error) {
+    res.render('404')
+  }
+}
+
+const updatePassword = async (req, res) => {
+  try {
+    const { user_id, password, confirmPassword } = req.body;
+
+    const found = await passwordReset.findOne({ user_id })
+    if (password !== confirmPassword) {
+      return res.render('reset-password', { found, error: "password not matching " })
+    }
+    // return res.send("Succefully reset password")
+
+  } catch (error) {
+    res.render('404')
+  }
+}
 
 
 
@@ -142,5 +173,7 @@ module.exports = {
   registerUser,
   verifyEmail,
   sendEmailVerification,
-  resetPassword
+  resetPassword,
+  resetPasswordResponse,
+  updatePassword
 }
